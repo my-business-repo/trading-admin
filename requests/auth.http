@@ -1,0 +1,90 @@
+### Variables for different environments
+@baseUrl = http://localhost:3000
+# @baseUrl = https://trading-admin-jade.vercel.app
+@authToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjdXN0b21lcklkIjoiMiIsImVtYWlsIjoic2FpbnlpQGdtYWlsLmNvbSIsImlhdCI6MTczOTgwNTEzOSwiZXhwIjoxNzM5ODkxNTM5fQ._c8aeH9sf-WEa8rUmOzTXQzYUuPsaW0LuUtPrsqNE7E
+@verificationToken = 
+
+### Login Customer
+# @name login
+POST {{baseUrl}}/api/v1/customer/login
+Content-Type: application/json
+
+{
+    "email": "sainyi@gmail.com",
+    "password": "sainyinyitun"
+}
+
+
+### Get Working
+GET {{baseUrl}}/api/v1/working
+
+### Update authToken with login response
+@authToken = {{login.response.body.token}}
+
+### Sign Up Customer with Account
+POST {{baseUrl}}/api/v1/customer/signup
+Content-Type: application/json
+
+{
+    "email": "newuser2@example.com",
+    "name": "New User 2",
+    "phone": "+1234567890",
+    "password": "newpassword123",
+    "socialSecurityNumber": "123-45-6789"
+}
+
+### Send Email Verification
+POST {{baseUrl}}/api/v1/customer/send-verification
+Content-Type: application/json
+
+{
+    "email": "newuser@example.com"
+}
+
+### Verify Email (This is the link that will be sent to email)
+GET {{baseUrl}}/api/v1/customer/verify-email?token={{verificationToken}}
+Content-Type: application/json
+
+### Logout Customer
+POST {{baseUrl}}/api/v1/customer/logout
+Authorization: Bearer {{authToken}}
+
+### Example Protected Route (Replace with your actual protected endpoint)
+GET {{baseUrl}}/api/v1/customer/profile
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+
+### Create Deposit Transaction
+POST {{baseUrl}}/api/v1/transactions/deposit
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "accountNo": "1738856250480251",
+    "amount": 100.00,
+    "description": "Deposit for savings"
+}
+
+
+### Get Customer Assets
+GET {{baseUrl}}/api/v1/customer/assets
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+
+### Get Customer Assets
+GET {{baseUrl}}/api/v1/customer/coin/balance?currency=usdt
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+
+### change password
+POST {{baseUrl}}/api/v1/customer/change-password
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "oldPassword": "sainyinyitun",
+    "newPassword": "sainyinyitun"
+}

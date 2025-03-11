@@ -1,0 +1,35 @@
+### Variables for different environments
+@baseUrl = http://localhost:3000
+@authToken =
+@verificationToken = 
+
+### Login Customer
+# @name login
+POST {{baseUrl}}/api/v1/customer/login
+Content-Type: application/json
+
+{
+    "email": "sainyi@gmail.com",
+    "password": "sainyi"
+}
+
+
+### Update authToken with login response
+@authToken = {{login.response.body.token}}
+
+
+### Exchange
+POST {{baseUrl}}/api/v1/exchange-request
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "fromCurrency": "USDT",
+    "toCurrency": "BTC",
+    "amount": 5
+}
+
+### Get Exchanges
+GET {{baseUrl}}/api/v1/exchanges
+Authorization: Bearer {{authToken}}
+

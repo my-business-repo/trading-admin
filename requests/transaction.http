@@ -1,0 +1,120 @@
+### Variables for different environments
+@baseUrl = http://localhost:3000
+@authToken
+
+### Login Customer
+# @name login
+POST {{baseUrl}}/api/v1/customer/login
+Content-Type: application/json
+
+{
+    "email": "sainyi@gmail.com",
+    "password": "sainyi"
+}
+
+### Update authToken with login response
+@authToken = {{login.response.body.token}}
+
+### Create Deposit Transaction
+POST {{baseUrl}}/api/v1/transactions/deposit
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "accountNo": "1739632687033920",
+    "amount": 100.00,
+    "description": "Deposit for savings"
+}
+
+
+### Get Deposit Transactions`
+GET {{baseUrl}}/api/v1/transactions/deposit
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+### Create Withdrawal Transaction
+POST {{baseUrl}}/api/v1/transactions/withdrawal
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "address": "1739629409954958",
+    "currency": "USDT",
+    "amount": 5.00,  
+    "description": "Withdrawal for savings"
+}
+
+
+### Get withdrawal Transactions`
+GET {{baseUrl}}/api/v1/transactions/withdrawal
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+### GET all transactions
+GET {{baseUrl}}/api/v1/transactions
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+### Withdraw Funds
+POST {{baseUrl}}/api/v1/transactions/withdrawal
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "transactionId": "12345",
+    "accountNo": "1738856250480251",
+    "amount": 50.00,
+    "description": "Withdrawal for savings"
+}
+
+
+
+### Create Trade Request { customerId, tradeType, period, tradeQuantity, currency } = validatedData;
+POST {{baseUrl}}/api/v1/trade-request
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "customerId": 2,
+  "tradeType": "SHORT",
+  "period": 30,
+  "tradeQuantity": 1,
+  "currency": "USDT"
+}
+
+
+### Create Trade Success Request
+POST {{baseUrl}}/api/v1/trade-success
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tradeId": 1,
+  "customerId":2
+}
+
+### Get All Trade
+GET {{baseUrl}}/api/v1/trade
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+### get balance of customer
+GET {{baseUrl}}/api/v1/customer/balance
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+
+### Trade Cleaner
+POST {{baseUrl}}/api/v1/trade-cleanup
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+
+### check workikng
+GET {{baseUrl}}/api/v1/working
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+
+
+

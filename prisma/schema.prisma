@@ -1,0 +1,245 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model account {
+  id               Int           @id @default(autoincrement())
+  accountNo        String        @unique(map: "Account_accountNo_key")
+  balance          Decimal       @default(0.00) @db.Decimal(30, 18)
+  inreview_balance Decimal       @default(0.00) @db.Decimal(30, 18)
+  currency         String        @default("USDT")
+  isActive         Boolean       @default(true)
+  customerId       Int
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @default(now())
+  customer         customer      @relation(fields: [customerId], references: [id], map: "Account_customerId_fkey")
+  trade            trade[]
+  transaction      transaction[]
+
+  @@index([accountNo], map: "Account_accountNo_idx")
+  @@index([customerId], map: "Account_customerId_idx")
+}
+
+model address {
+  id            Int          @id @default(autoincrement())
+  type          address_type @default(PRIMARY)
+  streetAddress String
+  city          String
+  state         String
+  postalCode    String
+  country       String       @default("United States")
+  isDefault     Boolean      @default(false)
+  customerId    Int
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime
+  customer      customer     @relation(fields: [customerId], references: [id], map: "Address_customerId_fkey")
+
+  @@index([customerId], map: "Address_customerId_idx")
+  @@index([type], map: "Address_type_idx")
+}
+
+model admin {
+  id        Int      @id @default(autoincrement())
+  loginId   String   @unique(map: "Admin_loginId_key") @db.Char(8)
+  email     String   @unique(map: "Admin_email_key")
+  name      String?
+  phone     String
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  avatar    String?
+  @@index([loginId], map: "Admin_loginId_idx")
+}
+
+model customer {
+  id                   Int        @id @default(autoincrement())
+  email                String     @unique(map: "Customer_email_key")
+  name                 String
+  phone                String?
+  password             String
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime
+  active               Boolean    @default(true)
+  isActivated          Boolean    @default(false)
+  lastLoginTime        DateTime?
+  socialSecurityNumber String?
+  loginId              String     @unique(map: "Customer_loginId_key")
+  account              account[]
+  address              address[]
+  trade                trade[]
+  winrate              winrate[]
+  exchange             exchange[]
+}
+
+model invalidtoken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique(map: "InvalidToken_token_key")
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([expiresAt], map: "InvalidToken_expiresAt_idx")
+  @@index([token], map: "InvalidToken_token_idx")
+}
+
+model trade {
+  id            Int                 @id @default(autoincrement())
+  customerId    Int
+  accountId     Int
+  tradeType     trade_tradeType
+  period        Int
+  tradingStatus trade_tradingStatus
+  isSuccess     Boolean?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime
+  tradeQuantity Float
+  account       account             @relation(fields: [accountId], references: [id], map: "Trade_accountId_fkey")
+  customer      customer            @relation(fields: [customerId], references: [id], map: "Trade_customerId_fkey")
+
+  @@index([accountId], map: "Trade_accountId_fkey")
+  @@index([customerId], map: "Trade_customerId_fkey")
+}
+
+model tradingsetting {
+  id          Int                        @id @default(autoincrement())
+  seconds     Int
+  percentage  Float
+  createdAt   DateTime                   @default(now())
+  updatedAt   DateTime
+  tradingType tradingsetting_tradingType @default(SHORT)
+  winRate     Float                      @default(0)
+
+  @@unique([seconds, tradingType], map: "TradingSetting_seconds_tradingType_key")
+}
+
+model transaction {
+  id              Int                @id @default(autoincrement())
+  transactionId   String             @unique(map: "Transaction_transactionId_key")
+  type            transaction_type
+  amount          Decimal            @db.Decimal(30, 18)
+  address         String?
+  sent            Boolean            @default(false)
+  currency        String?
+  description     String?
+  status          transaction_status @default(PENDING)
+  accountId       Int
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime
+  account         account            @relation(fields: [accountId], references: [id], map: "Transaction_accountId_fkey")
+  transactionfile transactionfile[]
+
+  @@index([accountId], map: "Transaction_accountId_idx")
+  @@index([transactionId], map: "Transaction_transactionId_idx")
+}
+
+model transactionfile {
+  id            Int         @id @default(autoincrement())
+  transactionId Int
+  filePath      String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime
+  transaction   transaction @relation(fields: [transactionId], references: [id], map: "TransactionFile_transactionId_fkey")
+
+  @@index([transactionId], map: "TransactionFile_transactionId_fkey")
+}
+
+model verificationtoken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique(map: "VerificationToken_token_key")
+  email     String
+  type      String   @default("EMAIL_VERIFICATION")
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email], map: "VerificationToken_email_idx")
+  @@index([token], map: "VerificationToken_token_idx")
+}
+
+model winrate {
+  id         Int      @id @default(autoincrement())
+  customerId Int
+  winRate    Float    @default(0.5)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+  customer   customer @relation(fields: [customerId], references: [id], map: "WinRate_customerId_fkey")
+
+  @@index([customerId], map: "WinRate_customerId_fkey")
+}
+
+model exchange {
+  id              Int             @id @default(autoincrement())
+  fromCurrency    String
+  toCurrency      String
+  fromAccountNo   String
+  toAccountNo     String
+  amount          Decimal         @db.Decimal(30, 18)
+  exchangedAmount Decimal         @db.Decimal(30, 18)
+  exchangeRate    Decimal         @db.Decimal(30, 18)
+  customerId      Int
+  exchangeStatus  exchange_status @default(PENDING)
+  exchangeType    exchange_type   @default(BUY)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  customer        customer        @relation(fields: [customerId], references: [id], map: "Exchange_customerId_fkey")
+
+  @@index([customerId], map: "Exchange_customerId_idx")
+}
+
+
+model notification {
+  id        Int      @id @default(autoincrement())
+  title     String
+  message   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum address_type {
+  PRIMARY
+  BILLING
+  SHIPPING
+}
+
+enum transaction_type {
+  DEPOSIT
+  WITHDRAWAL
+  TRANSFER
+}
+
+enum trade_tradeType {
+  SHORT
+  LONG
+}
+
+enum transaction_status {
+  PENDING
+  COMPLETED
+  FAILED
+  REVERSED
+}
+
+enum trade_tradingStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum tradingsetting_tradingType {
+  SHORT
+  LONG
+}
+
+enum exchange_status {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum exchange_type {
+  BUY
+  SELL
+}

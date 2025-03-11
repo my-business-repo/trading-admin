@@ -1,0 +1,71 @@
+name: Deploy Trading Frontend
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{secrets.AWS_SSH_PRIVATE_KEY}}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{secrets.AWS_HOST}} >> ~/.ssh/known_hosts
+
+      - name: Deploy Trading Admin
+        run: |
+          ssh ${{secrets.AWS_USER}}@${{secrets.AWS_HOST}} << 'EOF'
+            set -e  # Exit on any error
+            
+            echo "Changing to project directory..."
+            cd /home/ec2-user/projects/trading-admin || { echo "Failed to change directory"; exit 1; }
+
+            # print current directory
+            echo "Current directory: $(pwd)"
+            
+            echo "Pulling latest changes..."
+            git pull origin main || { echo "Git pull failed"; exit 1; }
+
+            echo "Stopping trading-admin container..."
+            docker stop trading-admin || echo "Warning: Container not running"
+            
+            echo "Removing old container..."
+            docker rm trading-admin || echo "Warning: No container to remove"
+
+            echo "Go to projects directory..."
+            cd /home/ec2-user/projects || { echo "Failed to change directory"; exit 1; }
+
+            # print current directory
+            echo "Current directory: $(pwd)"
+
+            echo "Building trading-admin only..."
+            docker-compose build --no-cache trading-admin || { echo "Docker build failed"; exit 1; }
+            
+            echo "Starting trading-admin only..."
+            docker-compose up -d trading-admin || { echo "Docker compose up failed"; exit 1; }
+            
+            echo "Checking if container is running..."
+            if docker ps | grep -q trading-admin; then
+              echo "✅ trading-admin has been successfully deployed!"
+
+              # delete unused images
+              docker image prune -a
+            else
+              echo "❌ Container failed to start"
+              docker logs trading-admin
+              exit 1
+            fi
+          EOF

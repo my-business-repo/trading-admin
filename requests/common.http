@@ -1,0 +1,3 @@
+# GET {{baseUrl}}/api/v1/customer/balance
+# Authorization: Bearer {{authToken}}
+# Content-Type: application/json
