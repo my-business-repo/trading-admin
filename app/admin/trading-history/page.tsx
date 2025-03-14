@@ -44,6 +44,7 @@ export default function TradingHistoryPage() {
         const history = await getAllTrading();
         setTradingHistory(history as TradingHistory[]);
         setFilteredHistory(history as TradingHistory[]);
+        console.log(history);
         setIsLoading(false); // Set loading to false after fetching
     }
 
@@ -53,12 +54,14 @@ export default function TradingHistoryPage() {
 
     useEffect(() => {
         const filtered = tradingHistory.filter(trade => {
-            const matchesCustomerName = trade.customerName.toLowerCase().includes(customerNameFilter.toLowerCase());
+            // const matchesCustomerName = trade.customerName.toLowerCase().includes(customerNameFilter.toLowerCase());
+            console.log(trade.loginId);
+            const matchesCustomerId = trade.loginId.toString().includes(customerNameFilter);
             const matchesTradeType = tradeTypeFilter ? trade.tradeType === tradeTypeFilter : true;
             const matchesStatus = statusFilter ? (trade.isSuccess ? "WIN" : "LOSE") === statusFilter : true;
             const matchesTradingStatus = tradingStatusFilter ? trade.tradingStatus === tradingStatusFilter : true;
 
-            return matchesCustomerName && matchesTradeType && matchesStatus && matchesTradingStatus;
+            return matchesTradeType && matchesStatus && matchesTradingStatus && matchesCustomerId;
         });
         setFilteredHistory(filtered);
     }, [customerNameFilter, tradeTypeFilter, statusFilter, tradingStatusFilter, tradingHistory]);
@@ -81,7 +84,7 @@ export default function TradingHistoryPage() {
                     <CardTitle>Trading History</CardTitle>
                     <div className="flex gap-4">
                         <Input
-                            placeholder="Filter by Customer Name"
+                            placeholder="Filter by Customer Id"
                             value={customerNameFilter}
                             onChange={(e) => setCustomerNameFilter(e.target.value)}
                         />
@@ -112,7 +115,8 @@ export default function TradingHistoryPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Customer ID</TableHead>
+                                    {/* <TableHead>Customer ID</TableHead> */}
+                                    <TableHead>CUSTOMER ID</TableHead>
                                     <TableHead>Customer Name</TableHead>
                                     <TableHead>Account Number</TableHead>
                                     <TableHead>Trade Type</TableHead>
@@ -127,7 +131,8 @@ export default function TradingHistoryPage() {
                             <TableBody>
                                 {filteredHistory.map((trade) => (
                                     <TableRow key={trade.id}>
-                                        <TableCell>{trade.customerId}</TableCell>
+                                        {/* <TableCell>{trade.customerId}</TableCell> */}
+                                        <TableCell>{trade.loginId}</TableCell>
                                         <TableCell>{trade.customerName}</TableCell>
                                         <TableCell>{trade.accountNumber}</TableCell>
                                         <TableCell>
