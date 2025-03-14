@@ -126,10 +126,10 @@ export async function POST(req: Request) {
       return newCustomer;
     });
 
-    // update loginId base on id e.g 1 => 00001 , 2=> 00002 , 3=> 00003
+    // update loginId base on id e.g 1 => 120001 , 2=> 120002 , 3=> 120003
     const updatedCustomer = await prisma.customer.update({
       where: { id: customer.id },
-      data: { loginId: `${customer.id.toString().padStart(6, '0')}` }
+      data: { loginId: `12${customer.id.toString().padStart(4, '0')}` }
     });
 
     // Remove password from response
