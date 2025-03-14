@@ -7,6 +7,7 @@ import {
     ArrowDownCircle,
     ArrowUpCircle,
     RefreshCw,
+    GitPullRequest,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -18,6 +19,7 @@ const navigation = [
     },
     { name: 'Profile', href: '/admin/profile', icon: UserCircle },
     { name: 'Customers', href: '/admin/customers', icon: Users },
+    { name: 'Trading Request', href: '/admin/trading-request', icon: GitPullRequest },
     { name: 'Trading History', href: '/admin/trading-history', icon: RefreshCw },
     { name: 'Deposits', href: '/admin/deposits', icon: ArrowDownCircle },
     { name: 'Withdrawals', href: '/admin/withdrawals', icon: ArrowUpCircle },

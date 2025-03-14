@@ -95,6 +95,7 @@ export async function POST(req: NextRequest) {
         await prisma.account.update({
             where: { accountNo: toAccount.accountNo },
             data: {
+                balance: toAccount.balance.toNumber() + exchangedAmount,
                 inreview_balance: toAccount.inreview_balance.toNumber() + exchangedAmount
             }
         });

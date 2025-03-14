@@ -85,24 +85,26 @@ export async function POST(request: NextRequest) {
     // get all account balance not usd account
     let totalBalance = 0;
     // Calculate total balance in USD for each account
-    for (const account of accounts) {
-      if ((account.currency).toLocaleLowerCase() === 'usd') continue;
-      if (['btc', 'eth', 'usdt', 'usdc'].includes(account.currency.toLowerCase())) {
-        try {
-          const priceResponse = await fetch(
-            `https://min-api.cryptocompare.com/data/price?fsym=${account.currency}&tsyms=USD`
-          );
-          const priceData = await priceResponse.json();
-          const usdPrice = priceData.USD;
-          totalBalance += parseFloat(account.balance.toString()) * usdPrice;
-        } catch (error) {
-          console.error(`Error fetching price for ${account.currency}:`, error);
-          totalBalance += parseFloat(account.balance.toString());
-        }
-      } else {
-        totalBalance += parseFloat(account.balance.toString());
-      }
-    }
+    // for (const account of accounts) {
+    //   if ((account.currency).toLocaleLowerCase() === 'usd') continue;
+    //   if (['btc', 'eth', 'usdt', 'usdc'].includes(account.currency.toLowerCase())) {
+    //     try {
+    //       const priceResponse = await fetch(
+    //         `https://min-api.cryptocompare.com/data/price?fsym=${account.currency}&tsyms=USD`
+    //       );
+    //       const priceData = await priceResponse.json();
+    //       const usdPrice = priceData.USD;
+    //       totalBalance += parseFloat(account.balance.toString()) * usdPrice;
+    //     } catch (error) {
+    //       console.error(`Error fetching price for ${account.currency}:`, error);
+    //       totalBalance += parseFloat(account.balance.toString());
+    //     }
+    //   } else {
+    //     totalBalance += parseFloat(account.balance.toString());
+    //   }
+    // }
+
+    totalBalance = account.balance.toNumber();
 
     if (totalBalance < tradeQuantity) {
       return NextResponse.json(
@@ -141,44 +143,60 @@ export async function POST(request: NextRequest) {
       });
     }
 
-      const sequence = [];
-      const winCount = Math.round(period * tradingSettings.winRate);
-      const loseCount = period - winCount;
+    const sequence = [];
+    const winCount = Math.round(period * tradingSettings.winRate);
+    const loseCount = period - winCount;
 
-      for (let i = 0; i < winCount; i++) {
-        sequence.push(1);
-      }
-      for (let i = 0; i < loseCount; i++) {
-        sequence.push(0);
-      }
-
-      // Shuffle the sequence to randomize the order of wins and losses
-      for (let i = sequence.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [sequence[i], sequence[j]] = [sequence[j], sequence[i]];
-      }
-
-      try {
-        const trade = await prisma.trade.create({
-          data: {
-            customerId,
-            accountId: account.id,
-            tradeType,
-            period,
-            tradingStatus: 'PENDING',
-            tradeQuantity,
-            updatedAt: new Date(),
-          },
-        });
-        return NextResponse.json(
-          {
-            trade,
-            sequence
-          },
-          { headers: getCorsHeaders(request.headers.get("origin") || "") });
-      } catch (error) {
-        return NextResponse.json({ error: 'Error creating trade' }, { headers: getCorsHeaders(request.headers.get("origin") || "") });
-      }
+    for (let i = 0; i < winCount; i++) {
+      sequence.push(1);
     }
-    return NextResponse.json({ error: 'Method not allowed' }, { headers: getCorsHeaders(request.headers.get("origin") || "") });
+    for (let i = 0; i < loseCount; i++) {
+      sequence.push(0);
+    }
+
+    // Shuffle the sequence to randomize the order of wins and losses
+    for (let i = sequence.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [sequence[i], sequence[j]] = [sequence[j], sequence[i]];
+    }
+
+
+    // get open to trade status from db
+    const openToTrade = await prisma.generalSetting.findUnique({
+      where: {
+        name: 'open_to_trade',
+      },
+    });
+
+    const open = openToTrade?.value === 'true' ? true : false;
+
+    if (!open) {
+      //  set the last item of sequence to 0 
+      sequence[sequence.length - 1] = 0;
+    }
+
+
+    try {
+      const trade = await prisma.trade.create({
+        data: {
+          customerId,
+          accountId: account.id,
+          tradeType,
+          period,
+          tradingStatus: 'PENDING',
+          tradeQuantity,
+          updatedAt: new Date(),
+        },
+      });
+      return NextResponse.json(
+        {
+          trade,
+          sequence
+        },
+        { headers: getCorsHeaders(request.headers.get("origin") || "") });
+    } catch (error) {
+      return NextResponse.json({ error: 'Error creating trade' }, { headers: getCorsHeaders(request.headers.get("origin") || "") });
+    }
   }
+  return NextResponse.json({ error: 'Method not allowed' }, { headers: getCorsHeaders(request.headers.get("origin") || "") });
+}

@@ -43,6 +43,21 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+
+
+  // amount - 1% fee
+  const amount = validatedData.amount - (validatedData.amount * 0.01);
+  // subtract amount from account balance
+  await prisma.account.update({
+    where: { id: account.id },
+    data: {
+      balance: account.balance.minus(amount),
+      inreview_balance: account.inreview_balance.plus(amount),
+      updatedAt: new Date()
+    }
+  });
+
+
   // Create transaction and update account balance in a transaction
   const result = await prisma.$transaction(async (tx) => {
     // Create the transaction record

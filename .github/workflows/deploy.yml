@@ -62,10 +62,11 @@ jobs:
               echo "✅ trading-admin has been successfully deployed!"
 
               # delete unused images
-              docker image prune -a
+              docker system prune -af
             else
               echo "❌ Container failed to start"
               docker logs trading-admin
+              docker system prune -af
               exit 1
             fi
           EOF

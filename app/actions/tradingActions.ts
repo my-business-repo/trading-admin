@@ -59,6 +59,38 @@ export async function updateTradingStatus(tradeId: number, newStatus: string): P
     };
 }
 
+// update trading wind lose
+export async function updateTradingWindLose(tradeId: number, newStatus: string): Promise<TradingHistory> {
+    const trade = await prisma.trade.update({
+        where: { id: tradeId },
+        include: {
+            customer: true,
+            account: true,
+        },
+        data: {
+            isSuccess: newStatus === 'WIN' ? true : false,
+            tradingStatus: trade_tradingStatus.COMPLETED
+        },
+    });
+
+    return {
+        id: trade.id,
+        customerId: trade.customerId.toString(),
+        customerName: trade.customer.name,
+        accountId: trade.accountId,
+        accountNumber: trade.account.accountNo,
+        createdAt: trade.createdAt.toISOString(),
+        updatedAt: trade.updatedAt.toISOString(),
+        tradeType: trade.tradeType,
+        period: trade.period,
+        loginId: trade.customer.loginId,
+        tradingStatus: trade.tradingStatus,
+        isSuccess: trade.isSuccess ?? false,
+        tradeQuantity: trade.tradeQuantity,
+    };
+}
+
+
 // get trading settings
 export async function getTradingSettings(): Promise<TradingSetting[]> {
     const settings = await prisma.tradingsetting.findMany();
@@ -109,4 +141,66 @@ export async function getTotalWithdraw(): Promise<number> {
         _sum: { amount: true },
     });
     return Number(totalWithdraw._sum.amount ?? 0);
+}
+
+// get trading request (status is pending)
+export async function getTradingRequest(): Promise<TradingHistory[]> {
+    const tradingRequest = await prisma.trade.findMany({
+        where: { tradingStatus: trade_tradingStatus.PENDING },
+        include: {
+            customer: true,
+            account: true,
+        },
+    });
+    return tradingRequest.map(request => ({
+        id: request.id,
+        customerId: request.customerId.toString(),
+        customerName: request.customer.name,
+        accountId: request.accountId,
+        accountNumber: request.account.accountNo,
+        createdAt: request.createdAt.toISOString(),
+        updatedAt: request.updatedAt.toISOString(),
+        tradeType: request.tradeType,
+        period: request.period,
+        loginId: request.customer.loginId,
+        tradingStatus: request.tradingStatus,
+        isSuccess: request.isSuccess ?? false,
+        tradeQuantity: request.tradeQuantity,
+    }));
+}
+
+
+// get general setting by name
+export async function isAutoDecideWinLoseEnabled(): Promise<boolean> {
+    const setting = await prisma.generalSetting.findUnique({
+        where: { name: "auto_decide_win_lose" },
+    });
+    return setting?.value === "true" ? true : false;
+}
+
+
+// update auto trade status
+export async function updateAutoDecideWinLoseStatus(autoDecideWinLoseEnabled: boolean): Promise<boolean> {
+    const setting = await prisma.generalSetting.update({
+        where: { name: "auto_decide_win_lose" },
+        data: { value: autoDecideWinLoseEnabled.toString() },
+    });
+    return setting.value === "true" ? true : false;
+}
+
+// get open to trade status
+export async function getOpenToTradeStatus(): Promise<boolean> {
+    const setting = await prisma.generalSetting.findUnique({
+        where: { name: "open_to_trade" },
+    });
+    return setting?.value === "true" ? true : false;
+}
+
+// update open to trade status
+export async function updateOpenToTradeStatus(openToTrade: boolean): Promise<boolean> {
+    const setting = await prisma.generalSetting.update({
+        where: { name: "open_to_trade" },
+        data: { value: openToTrade.toString() },
+    });
+    return setting.value === "true" ? true : false;
 }

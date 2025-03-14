@@ -196,11 +196,18 @@ export async function updateWithdrawalStatus(withdrawalId: string, newStatus: tr
         const withdrawal = await prisma.transaction.findUnique({
             where: { id: parseInt(withdrawalId) },
         });
+
+        if (!withdrawal) {
+            return { message: "Withdrawal not found" }
+        }
+
+        const amount = withdrawal?.amount.minus(withdrawal?.amount.times(0.01));
+
         // update user balance
         if (newStatus === transaction_status.COMPLETED) {
             const user = await prisma.account.update({
                 where: { id: withdrawal?.accountId },
-                data: { balance: { decrement: withdrawal?.amount } },
+                data: { inreview_balance: { decrement: amount } },
             });
         }
 

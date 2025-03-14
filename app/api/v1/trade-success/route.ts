@@ -56,10 +56,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+
     let isSuccess = false;
     let profit = 0;
-
-
 
     // Get trading setting by second & type
     let tradingSetting = await prisma.tradingsetting.findFirst({
@@ -106,6 +105,27 @@ export async function POST(req: NextRequest) {
       }
 
       tradingSetting = newTradingSetting;
+    }
+
+    // if trade is already completed, just return the trade data
+    // get auto_decide_win_lose from db
+    const autoDecideWinLose = await prisma.generalSetting.findUnique({
+      where: {
+        name: 'auto_decide_win_lose',
+      },
+    });
+
+    const autoDecide = autoDecideWinLose?.value === 'true' ? true : false;
+
+    if (!autoDecide) {
+      if (trade.tradingStatus === 'COMPLETED') {
+        const profit = trade.isSuccess ? trade.tradeQuantity * (tradingSetting.percentage / 100) : -1 * trade.tradeQuantity;
+        return NextResponse.json({
+          success: true,
+          profit: profit,
+          result: trade.isSuccess ? 'win' : 'lose',
+        }, { headers: getCorsHeaders(req.headers.get("origin") || "") });
+      }
     }
 
     if (outcome === null) {
@@ -168,7 +188,11 @@ export async function POST(req: NextRequest) {
           }
         });
       });
-      return NextResponse.json({ success: true, profit: profit }, { headers: getCorsHeaders(req.headers.get("origin") || "") });
+      return NextResponse.json({
+        success: true,
+        profit: profit,
+        result: isSuccess ? 'win' : 'lose',
+      }, { headers: getCorsHeaders(req.headers.get("origin") || "") });
     } catch (error) {
       console.error('An error occurred, rolling back the transaction:', error);
       return NextResponse.json({ error: 'Error trading this time! Please try again' }, { headers: getCorsHeaders(req.headers.get("origin") || "") });

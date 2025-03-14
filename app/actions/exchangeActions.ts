@@ -66,7 +66,7 @@ export const changeExchangeStatus = async (exchangeId: number, status: exchange_
             await prisma.account.update({
                 where: { accountNo: exchange.toAccountNo },
                 data: {
-                    balance: toAccount.balance.toNumber() + exchange.exchangedAmount.toNumber(),
+                    // balance: toAccount.balance.toNumber() + exchange.exchangedAmount.toNumber(),
                     inreview_balance: toAccount.inreview_balance.toNumber() - exchange.exchangedAmount.toNumber()
                 }
             });
