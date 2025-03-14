@@ -1,4 +1,4 @@
-FROM node:22-bullseye
+FROM node:22-alpine
 
 # Set working directory inside container
 WORKDIR /app
@@ -17,7 +17,7 @@ RUN npx prisma migrate deploy
 RUN npx prisma generate
 
 # seed db
-RUN npx prisma db seed
+# RUN npx prisma db seed
 
 # Build the Next.js app
 RUN npm run build
