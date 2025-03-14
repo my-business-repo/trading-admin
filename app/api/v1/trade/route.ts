@@ -21,6 +21,11 @@ export async function GET(req: NextRequest) {
                 select: {
                     accountNo: true
                 }
+            },
+            customer: {
+                select: {
+                    loginId: true
+                }
             }
         },	
         orderBy: {
