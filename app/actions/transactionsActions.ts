@@ -131,6 +131,7 @@ export async function getTransactionById(transactionId: string): Promise<Transac
             customerName: transaction.account.customer.name,
             createdAt: transaction.createdAt.toISOString(),
             updatedAt: transaction.updatedAt.toISOString(),
+            currency: transaction.currency || "USD",
             transactionfile: transaction.transactionfile.map(file => ({
                 id: file.id,
                 filename: file.filePath,
@@ -143,6 +144,47 @@ export async function getTransactionById(transactionId: string): Promise<Transac
         return null;
     }
 }
+
+// get deposits by user id
+export async function getDepositsByUserId(userId: number): Promise<Deposit[]> {
+    // get all customer's accounts
+    const accounts = await prisma.account.findMany({
+        where: { customerId: userId },
+    });
+
+    // get all deposits by account id
+    const deposits = await prisma.transaction.findMany({
+        where: {
+            accountId: { in: accounts.map(account => account.id) },
+            type: "DEPOSIT"
+        },
+        include: {
+            account: {
+                include: {
+                    customer: true,
+                },
+            },
+        },
+    });
+
+    return deposits as unknown as Deposit[];
+}
+
+
+// get withdrawals by user id
+export async function getWithdrawalsByUserId(userId: number): Promise<Withdrawal[]> {
+    const accounts = await prisma.account.findMany({
+        where: { customerId: userId },
+    });
+
+    // get all withdrawals by account id
+    const withdrawals = await prisma.transaction.findMany({
+        where: { accountId: { in: accounts.map(account => account.id) }, type: "WITHDRAWAL" },
+    });
+
+    return withdrawals as unknown as Withdrawal[];
+}
+
 
 // get all transactions (withdrawals)
 export async function getAllWithdrawals(): Promise<Withdrawal[]> {

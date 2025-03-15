@@ -30,6 +30,31 @@ export async function getAllTrading(): Promise<TradingHistory[]> {
         tradeQuantity: history.tradeQuantity,
     }));
 }
+// get trading by user id
+export async function getTradingByUserId(userId: number): Promise<TradingHistory[]> {
+    const trading = await prisma.trade.findMany({
+        where: { customerId: userId },
+        include: {
+            customer: true,
+            account: true,
+        },
+    });
+    return trading.map(history => ({
+        id: history.id,
+        customerId: history.customerId.toString(),
+        customerName: history.customer.name,
+        accountId: history.accountId,
+        accountNumber: history.account.accountNo,
+        createdAt: history.createdAt.toISOString(),
+        updatedAt: history.updatedAt.toISOString(),
+        tradeType: history.tradeType,
+        period: history.period,
+        loginId: history.customer.loginId,
+        tradingStatus: history.tradingStatus,
+        isSuccess: history.isSuccess ?? false,
+        tradeQuantity: history.tradeQuantity,
+    }));
+}
 
 // update trading status
 export async function updateTradingStatus(tradeId: number, newStatus: string): Promise<TradingHistory> {

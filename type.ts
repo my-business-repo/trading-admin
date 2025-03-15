@@ -14,6 +14,7 @@ export interface Deposit {
     accountNumber?: string;
     accountName?: string;
     notes?: string;
+    currency?: string;
 }
 
 // transaction details
@@ -30,6 +31,7 @@ export interface TransactionDetails {
     customerName: string;
     createdAt: string;
     updatedAt: string;
+    currency: string;
     transactionfile: TransactionFile[];
 }
 
