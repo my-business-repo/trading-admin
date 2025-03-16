@@ -11,7 +11,7 @@ Content-Type: application/json
 
 {
     "email": "sainyi@gmail.com",
-    "password": "sainyinyitun"
+    "password": "sainyi"
 }
 
 
@@ -95,4 +95,36 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 
+### set fund password
+POST {{baseUrl}}/api/v1/customer/set-fund-password
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
 
+{
+    "fundPassword": "123456"
+}
+
+### check fund password
+GET {{baseUrl}}/api/v1/customer/is-set-fund-password
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+
+### modify fund password
+POST {{baseUrl}}/api/v1/customer/modify-fund-password
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "oldFundPassword": "123456",
+    "newFundPassword": "123456"
+}
+
+### check fund password
+POST {{baseUrl}}/api/v1/customer/check-fund-password
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "fundPassword": "123456"
+}

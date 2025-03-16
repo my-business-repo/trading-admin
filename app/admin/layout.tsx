@@ -44,7 +44,7 @@ export default function AdminLayout({
       {/* Left Sidebar Navigation */}
       <LeftMenu />
       {/* Main Content Area */}
-      <div className="flex-1 ml-64">
+      <div className="flex-1 ml-64 pt-16">
         {/* Top Navigation Bar */}
         <TopMenu userSession={session?.user} />
 

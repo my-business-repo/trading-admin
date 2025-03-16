@@ -58,7 +58,7 @@ export default function TopMenu({ userSession }: { userSession: any }) {
 
 
     return (
-        <div className="h-16 bg-card border-b px-6 flex items-center justify-between">
+        <div className="h-16 bg-card border-b px-6 flex items-center justify-between fixed top-0 right-0 left-64 z-50">
             {/* Welcome Message */}
             <div className="text-foreground">
                 <h2 className="text-lg font-medium">Welcome back, {user?.name}!</h2>
@@ -153,4 +153,3 @@ export default function TopMenu({ userSession }: { userSession: any }) {
         </div>
     )
 }
-
