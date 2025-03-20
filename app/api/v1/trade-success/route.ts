@@ -120,6 +120,19 @@ export async function POST(req: NextRequest) {
     if (!autoDecide) {
       if (trade.tradingStatus === 'COMPLETED') {
         const profit = trade.isSuccess ? trade.tradeQuantity * (tradingSetting.percentage / 100) : -1 * trade.tradeQuantity;
+
+        // Update the second table
+        await prisma.account.update({
+          where: {
+            id: trade.accountId
+          },
+          data: {
+            balance: {
+              increment: profit
+            }
+          }
+        });
+
         return NextResponse.json({
           success: true,
           profit: profit,
@@ -192,7 +205,8 @@ export async function POST(req: NextRequest) {
         success: true,
         profit: profit,
         result: isSuccess ? 'win' : 'lose',
-      }, { headers: getCorsHeaders(req.headers.get("origin") || "") });
+      },
+      { headers: getCorsHeaders(req.headers.get("origin") || "") });
     } catch (error) {
       console.error('An error occurred, rolling back the transaction:', error);
       return NextResponse.json({ error: 'Error trading this time! Please try again' }, { headers: getCorsHeaders(req.headers.get("origin") || "") });

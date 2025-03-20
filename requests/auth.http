@@ -126,5 +126,5 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-    "fundPassword": "123456"
+    "fundPassword": "1234567890"
 }
