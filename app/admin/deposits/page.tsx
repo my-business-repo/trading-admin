@@ -170,7 +170,7 @@ export default function Deposits() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Reference</TableHead>
+                  <TableHead>ID</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Method</TableHead>
@@ -191,7 +191,7 @@ export default function Deposits() {
                 ) : (
                   filteredDeposits.map((deposit) => (
                     <TableRow key={deposit.id}>
-                      <TableCell className="font-medium">{deposit.transactionId}</TableCell>
+                      <TableCell className="font-medium">{deposit.loginId}</TableCell>
                       <TableCell>{deposit.customerName}</TableCell>
                       <TableCell>${deposit.amount.toFixed(2)}</TableCell>
                       <TableCell>{deposit.type}</TableCell>

@@ -4,6 +4,7 @@ export interface Deposit {
     id: number;  // Ensure this is a number
     customerId: string;  // Adjust as necessary
     customerName: string;
+    loginId: string;
     transactionId: string;  // Added transactionId
     type: string;  // Added type
     accountId: string;
@@ -138,6 +139,7 @@ export interface Withdrawal {
     updatedAt: string;
     customerId: number;
     customerName: string;
+    loginId: string;
 }
 export interface Exchange {
     id: number;

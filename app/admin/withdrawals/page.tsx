@@ -212,25 +212,24 @@ export default function Withdrawals() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Transaction ID</TableHead>
-                    <TableHead>Type</TableHead>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Customer Name</TableHead>
                     <TableHead>Amount</TableHead>
+                    <TableHead>Currency</TableHead>
                     <TableHead>Address</TableHead>
                     <TableHead>Sent</TableHead>
-                    <TableHead>Currency</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Account Number</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Customer Name</TableHead>
+                    <TableHead>Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredWithdrawals.map((withdrawal) => (
                     <TableRow key={withdrawal.id}>
-                      <TableCell className="font-medium">{withdrawal.transactionId}</TableCell>
-                      <TableCell>{withdrawal.type}</TableCell>
-                      <TableCell>{withdrawal.amount} {withdrawal.currency}</TableCell>
+                      <TableCell>{withdrawal.loginId}</TableCell>
+                      <TableCell>{withdrawal.customerName}</TableCell>
+                      <TableCell>{withdrawal.amount}</TableCell>
+                      <TableCell>{withdrawal.currency}</TableCell>
                       <TableCell className="flex items-center">
                         <span>{formatAddress(withdrawal.address)}</span>
                         <Button
@@ -243,15 +242,12 @@ export default function Withdrawals() {
                         </Button>
                       </TableCell>
                       <TableCell>{withdrawal.sent ? "Yes" : "No"}</TableCell>
-                      <TableCell>{withdrawal.currency}</TableCell>
                       <TableCell>
                         <Badge className={getStatusBadge(withdrawal.status)}>
                           {withdrawal.status.charAt(0).toUpperCase() + withdrawal.status.slice(1)}
                         </Badge>
                       </TableCell>
-                      <TableCell>{withdrawal.accountNumber}</TableCell>
                       <TableCell>{new Date(withdrawal.createdAt).toLocaleDateString()}</TableCell>
-                      <TableCell>{withdrawal.customerName}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Link href={`/admin/withdrawals/${withdrawal.id}`}>
