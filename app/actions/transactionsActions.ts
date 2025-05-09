@@ -247,6 +247,14 @@ export async function updateWithdrawalStatus(withdrawalId: string, newStatus: tr
             return { message: "Withdrawal not found" }
         }
 
+        if(newStatus === transaction_status.FAILED){
+            // add the amount again 
+            const user = await prisma.account.update({
+                where: { id: withdrawal?.accountId },
+                data: { balance: { increment: withdrawal.amount} },
+            });
+        }
+
         const amount = withdrawal?.amount.minus(withdrawal?.amount.times(0.01));
 
         // update user balance

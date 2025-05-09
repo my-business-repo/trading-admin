@@ -142,6 +142,7 @@ export async function POST(request: NextRequest) {
                     amount: depositData.amount,
                     description: depositData.description,
                     status: "PENDING",
+                    currency:depositData.currency,
                     accountId: account?.id,
                     updatedAt: new Date(),
                 },
