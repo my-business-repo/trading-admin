@@ -101,3 +101,19 @@ export const getTotalCustomers = async (): Promise<number> => {
 };
 
 
+// change customer's account balance
+export const changeCustomerAccountBalance = async (id: number, accountId: number, balance: number) => {
+    const account = await prisma.account.findUnique({ where: { id: accountId } });
+    if (!account) {
+        throw new Error("Account not found");
+    }
+
+    const updatedBalance = account.balance.plus(balance);
+
+    const updatedAccount = await prisma.account.update({
+        where: { id: accountId },
+        data: { balance: updatedBalance },
+    });
+
+    return updatedAccount;
+};

@@ -3,10 +3,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Phone, Calendar, UserCircle } from "lucide-react";
+import { Mail, Phone, Calendar, UserCircle, PlusCircle, X, Edit3, Edit3Icon } from "lucide-react";
 import { Customer, Trade, TransactionDetails } from "@/type";
 import { useEffect, useState } from "react";
-import { getCustomerTransactions } from "@/app/actions/customerActions";
+import { changeCustomerAccountBalance, getCustomerTransactions } from "@/app/actions/customerActions";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface GeneralProps {
     customer: Customer;
@@ -14,8 +21,14 @@ interface GeneralProps {
 
 export default function General({ customer }: GeneralProps) {
 
+    const router = useRouter();
     const [transactions, setTransactions] = useState<TransactionDetails[]>([]);
-
+    const [totalUSD, setTotalUSD] = useState<number>(0);
+    const [showChangeBalanceModal, setShowChangeBalanceModal] = useState<boolean>(false);
+    const [selectedAccount, setSelectedAccount] = useState<number>(0);
+    const [balanceChange, setBalanceChange] = useState<number | null>(null);
+    const [selectedAccountBalance, setSelectedAccountBalance] = useState<number>(0);
+    const [selectedAccountCurrency, setSelectedAccountCurrency] = useState<string>("");
 
     // fetch customer's transactions
     const fetchTransactions = async () => {
@@ -24,15 +37,75 @@ export default function General({ customer }: GeneralProps) {
         console.log(transactions);
     };
 
-
     useEffect(() => {
         fetchTransactions();
+
+        // calculate the total balance of the account
+        const calculateTotalBalance = async () => {
+            let totalBalance = 0;
+
+            for (const acc of customer.account) {
+                const currency = acc.currency;
+                const balance = acc.balance;
+
+                // Skip USD accounts as they're already in USD
+                if (currency.toLowerCase() === 'usd') {
+                    totalBalance += balance;
+                    continue;
+                }
+                try {
+                    const priceResponse = await fetch(
+                        `https://min-api.cryptocompare.com/data/price?fsym=${currency.toLowerCase()}&tsyms=USD`
+                    );
+                    const priceData = await priceResponse.json();
+                    const usdPrice = priceData.USD;
+                    totalBalance += balance * usdPrice;
+                } catch (error) {
+                    console.error(`Error fetching price for ${currency}:`, error);
+                    totalBalance += balance; // fallback to original balance
+                }
+            }
+            console.log('usd totalBalance', totalBalance);
+            setTotalUSD(totalBalance);
+        };
+
+        calculateTotalBalance();
     }, []);
 
     const getStatusBadge = (active: boolean) => {
         return active ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
     };
 
+    // Handle account selection
+    const handleAccountSelect = (accountId: string) => {
+        setSelectedAccount(Number(accountId));
+        const account = customer.account.find(acc => acc.id.toString() === accountId);
+        if (account) {
+            setSelectedAccountBalance(account.balance);
+            setSelectedAccountCurrency(account.currency);
+        }
+    };
+
+    // Handle balance change submission
+
+    const handleBalanceChange = async () => {
+        // TODO: Implement API call to update balance
+        console.log('Changing balance for account:', selectedAccount, 'by:', balanceChange);
+        setShowChangeBalanceModal(false);
+        setSelectedAccount(0);
+        setBalanceChange(0);
+        setSelectedAccountBalance(0);
+
+        if (balanceChange !== null) {
+            const updatedAccount = await changeCustomerAccountBalance(customer.id, selectedAccount, balanceChange);
+            console.log('updatedAccount', updatedAccount);
+            // if updatedAccount is not null, show a success message
+            if (updatedAccount) {
+                toast.success('Balance updated successfully');
+                window.location.reload();
+            }
+        }
+    };
 
     // Calculate transaction summaries
     const calculateTransactionSummary = (transactions: TransactionDetails[]) => {
@@ -96,19 +169,42 @@ export default function General({ customer }: GeneralProps) {
             </Card>
 
             <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Account Information</CardTitle>
+                    <div>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setShowChangeBalanceModal(true)}
+                        >
+                            <Edit3Icon className="h-4 w-4 mr-2 text-green-600" />
+                            Change Balance
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="grid gap-4">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                            <p className="text-lg font-semibold text-blue-800">
+                                Total Balance: {totalUSD} USD
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="grid gap-4">
                         {customer?.account.map((acc, index) => (
-                            <div key={acc.id}>
-                                <h3 className="text-lg font-semibold text-blue-600">Account {index + 1}</h3>
-                                <p className="text-sm font-medium text-muted-foreground">Account No</p>
+                            <div key={acc.id} className="border border-blue-100 rounded-lg p-2">
+                                <h3 className="text-lg font-semibold text-blue-600">ACCOUNT {index + 1}</h3>
+                                <p className="text-sm font-medium text-muted-foreground">Account ID</p>
                                 <p className="text-lg">{acc.accountNo}</p>
                                 <p className="text-sm font-medium text-muted-foreground">Balance</p>
-                                <p className="text-lg">{acc.balance} {acc.currency}</p>
-                                {index < customer.account.length - 1 && <hr className="my-4" />} {/* Divider between accounts */}
+                                <div className="flex items-center gap-2">
+                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-1 mt-1">
+                                        <p className="text-lg text-blue-800">
+                                            {acc.balance} {acc.currency}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -140,6 +236,56 @@ export default function General({ customer }: GeneralProps) {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Change Balance Modal */}
+            <Dialog open={showChangeBalanceModal} onOpenChange={setShowChangeBalanceModal}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Change Balance</DialogTitle>
+                    </DialogHeader>
+                    <DialogDescription>
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="accountSelect">Select Account</Label>
+                                <Select
+                                    value={selectedAccount.toString()}
+                                    onValueChange={handleAccountSelect}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select Account" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {customer?.account.map((acc) => (
+                                            <SelectItem key={acc.id} value={acc.id.toString()}>
+                                                {acc.currency} - {acc.accountNo}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div>
+                                <Label htmlFor="balance">Balance</Label>
+                                <p>{selectedAccountBalance} {selectedAccountCurrency}</p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="balanceChange">Balance Change</Label>
+                                <p>Add or Subtract from the balance. To add, enter a positive number. To subtract, enter a negative number.</p>
+                                <Input
+                                    id="balanceChange"
+                                    type="number"
+                                    value={balanceChange || ""}
+                                    onChange={(e) => setBalanceChange(Number(e.target.value))}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Button onClick={handleBalanceChange}>Change Balance</Button>
+                            </div>
+                        </div>
+                    </DialogDescription>
+
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
