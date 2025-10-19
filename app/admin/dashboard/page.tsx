@@ -102,7 +102,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${stats.totalDeposit}
+              ${ Number(stats.totalDeposit).toFixed(3)}
             </div>
             <p className="text-xs text-muted-foreground">
               +10% from last month
@@ -115,7 +115,7 @@ export default function AdminDashboard() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.totalWithdraw}</div>
+            <div className="text-2xl font-bold">${Number(stats.totalWithdraw).toFixed(3)}</div>
             <p className="text-xs text-muted-foreground">
               +2.5% from last month
             </p>

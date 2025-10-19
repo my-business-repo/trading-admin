@@ -109,8 +109,8 @@ export default function General({ customer }: GeneralProps) {
 
     // Calculate transaction summaries
     const calculateTransactionSummary = (transactions: TransactionDetails[]) => {
-        const totalDeposit = transactions.filter(tx => tx.type === "DEPOSIT").reduce((sum, tx) => sum + tx.amount, 0);
-        const totalWithdraw = transactions.filter(tx => tx.type === "WITHDRAWAL").reduce((sum, tx) => sum + tx.amount, 0);
+        const totalDeposit = transactions.filter(tx => tx.type === "DEPOSIT").reduce((sum, tx) => sum + Number(tx.amount), 0);
+        const totalWithdraw = transactions.filter(tx => tx.type === "WITHDRAWAL").reduce((sum, tx) => sum + Number(tx.amount), 0);
 
         return { totalDeposit, totalWithdraw };
     };
@@ -186,12 +186,12 @@ export default function General({ customer }: GeneralProps) {
                     <div className="grid gap-4">
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
                             <p className="text-lg font-semibold text-blue-800">
-                                Total Balance: {totalUSD} USD
+                                Total Balance: ${Number(totalUSD).toFixed(3)} USD
                             </p>
                         </div>
                     </div>
 
-                    <div className="grid gap-4">
+                    <div className="grid gap-4 overflow-y-auto max-h-[300px]">
                         {customer?.account.map((acc, index) => (
                             <div key={acc.id} className="border border-blue-100 rounded-lg p-2">
                                 <h3 className="text-lg font-semibold text-blue-600">ACCOUNT {index + 1}</h3>
@@ -231,8 +231,8 @@ export default function General({ customer }: GeneralProps) {
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div>
-                        <p>Total Deposit: {transactionSummary.totalDeposit} USDT</p>
-                        <p>Total Withdraw: {transactionSummary.totalWithdraw} USDT</p>
+                        <p>Total Deposit: ${Number(transactionSummary.totalDeposit).toFixed(3)} USD</p>
+                        <p>Total Withdraw: ${Number(transactionSummary.totalWithdraw).toFixed(3)} USD</p>
                     </div>
                 </CardContent>
             </Card>

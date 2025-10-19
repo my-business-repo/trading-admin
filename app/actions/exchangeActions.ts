@@ -132,3 +132,37 @@ export const getExchangeById = async (exchangeId: number): Promise<Exchange | nu
     }
 };  
 
+// get exchanges by user id
+export const getExchangeByUserId = async (userId: number): Promise<Exchange[]> => {
+    try {
+        const exchanges = await prisma.exchange.findMany({
+            where: { customerId: userId },
+            include: {
+                customer: true
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
+
+        return exchanges.map(exchange => ({
+            id: exchange.id,
+            fromCurrency: exchange.fromCurrency,
+            toCurrency: exchange.toCurrency,
+            fromAccountNo: exchange.fromAccountNo,
+            toAccountNo: exchange.toAccountNo,
+            amount: exchange.amount.toNumber(),
+            exchangedAmount: exchange.exchangedAmount.toNumber(),
+            exchangeRate: exchange.exchangeRate.toNumber(),
+            customerId: exchange.customerId,
+            customerName: exchange.customer.name,
+            exchangeStatus: exchange.exchangeStatus,
+            exchangeType: exchange.exchangeType,
+            createdAt: exchange.createdAt.toISOString(),
+            updatedAt: exchange.updatedAt.toISOString()
+        }));
+    } catch (error) {
+        console.error("Error fetching exchanges by user id:", error);
+        return [];
+    }
+};

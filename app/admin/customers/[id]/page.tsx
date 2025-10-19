@@ -20,6 +20,7 @@ import General from "./General";
 import Deposit from "./DepositList";
 import WithdrawList from "./WithdrawList";
 import TradeList from "./TradeList";
+import ExchangeList from "./ExchangeList";
 
 export default function CustomerDetail() {
   const params = useParams();
@@ -66,6 +67,7 @@ export default function CustomerDetail() {
           <TabsTrigger value="deposit">Deposit</TabsTrigger>
           <TabsTrigger value="withdraw">Withdraw</TabsTrigger>
           <TabsTrigger value="trade">Trade</TabsTrigger>
+          <TabsTrigger value="exchange">Exchange</TabsTrigger>
         </TabsList>
         <TabsContent value="info">
           {customer && <General customer={customer} />}
@@ -78,6 +80,9 @@ export default function CustomerDetail() {
         </TabsContent>
         <TabsContent value="trade">
           {customer && <TradeList customer={customer} />}
+        </TabsContent>
+        <TabsContent value="exchange">
+          {customer && <ExchangeList customer={customer} />}
         </TabsContent>
       </Tabs>
       {/** other tables  */}
