@@ -8,6 +8,7 @@ import {
     ArrowUpCircle,
     RefreshCw,
     GitPullRequest,
+    MessageCircle
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -19,6 +20,7 @@ const navigation = [
     },
     { name: 'Profile', href: '/admin/profile', icon: UserCircle },
     { name: 'Customers', href: '/admin/customers', icon: Users },
+    { name: 'Chatting', href: '/admin/chat', icon: MessageCircle },
     { name: 'Trading Request', href: '/admin/trading-request', icon: GitPullRequest },
     { name: 'Trading History', href: '/admin/trading-history', icon: RefreshCw },
     { name: 'Deposits', href: '/admin/deposits', icon: ArrowDownCircle },

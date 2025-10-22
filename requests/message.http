@@ -1,0 +1,42 @@
+### Variables for different environments
+@baseUrl = http://localhost:3000
+# @baseUrl = https://trading-admin-jade.vercel.app
+@authToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjdXN0b21lcklkIjoiMiIsImVtYWlsIjoic2FpbnlpQGdtYWlsLmNvbSIsImlhdCI6MTczOTgwNTEzOSwiZXhwIjoxNzM5ODkxNTM5fQ._c8aeH9sf-WEa8rUmOzTXQzYUuPsaW0LuUtPrsqNE7E
+@verificationToken = 
+
+### Login Customer
+# @name login
+POST {{baseUrl}}/api/v1/customer/login
+Content-Type: application/json
+
+{
+    "email": "sainyi@gmail.com",
+    "password": "sainyi"
+}
+
+### Update authToken with login response
+@authToken = {{login.response.body.token}}
+
+
+### Get Working
+GET {{baseUrl}}/api/v1/working
+
+
+### Send Customer Message
+POST {{baseUrl}}/api/v1/customer/message
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "content": "This is a third message."
+}
+
+### Get Customer Messages
+GET {{baseUrl}}/api/v1/customer/message
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+### Get Customer Message Count
+GET {{baseUrl}}/api/v1/customer/message/count
+Content-Type: application/json
+Authorization: Bearer {{authToken}}

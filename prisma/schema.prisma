@@ -75,7 +75,26 @@ model customer {
   trade                trade[]
   winrate              winrate[]
   exchange             exchange[]
+  message              message[]
 }
+
+
+model message {
+  id           Int       @id @default(autoincrement())
+  content      String
+  from         String    // loginId of sender (customer or admin)
+  to           String    // loginId of receiver (customer or admin)
+  customerId   Int
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime
+
+  customer     customer  @relation(fields: [customerId], references: [id], map: "Message_customerId_fkey")
+
+  @@index([customerId], map: "Message_customerId_idx")
+  @@index([from], map: "Message_from_idx")
+  @@index([to], map: "Message_to_idx")
+}
+
 
 model invalidtoken {
   id        Int      @id @default(autoincrement())

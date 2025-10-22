@@ -184,3 +184,14 @@ export interface TradingSetting {
     tradingType: trade_tradeType;
     winRate: number;
 }
+
+
+export interface Message {
+    id: number;
+    content: string;
+    from: string;        // loginId of sender (customer or admin)
+    to: string;          // loginId of receiver (customer or admin)
+    customerId: number;
+    createdAt: string;
+    updatedAt: string;
+}
