@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    // create trading setting
     if (!tradingSetting) {
       // If no trading setting exists, create default settings based on predefined ratios
       const ratios = {

@@ -195,3 +195,12 @@ export interface Message {
     createdAt: string;
     updatedAt: string;
 }
+
+export interface Winrate {
+    id: number;
+    customerId: number;
+    winRate: number;
+    createdAt: string;
+    updatedAt: string;
+    customer?: any; // Relation to customer, optional and can be typed better if needed
+}

@@ -170,11 +170,39 @@ export async function POST(request: NextRequest) {
 
     const open = openToTrade?.value === 'true' ? true : false;
 
+    const customerWinrate = await prisma.winrate.findFirst({
+      where: {
+        customerId: customerId,
+      },
+    });
+
     if (!open) {
       //  set the last item of sequence to 0 
-      sequence[sequence.length - 1] = 0;
+      // sequence[sequence.length - 1] = 0;
+      let winRate = 0; // default
+      if (customerWinrate && typeof customerWinrate.winRate === 'number') {
+        console.log("the customer win rate is ::", customerWinrate);
+        winRate = customerWinrate.winRate;
+      }
+      // calculate outcome: 1 means win, 0 means lose (according to winRate)
+      // Use random float [0,1), if less than or equal to winRate then win else lose
+      const rand = Math.random();
+      const outcome = rand <= winRate ? 1 : 0;
+      // replace the last item in sequence with this outcome
+      sequence[sequence.length - 1] = outcome;
+    } else {
+      let winRate = 0; // default
+      if (customerWinrate && typeof customerWinrate.winRate === 'number') {
+        console.log("the customer win rate is ::", customerWinrate);
+        winRate = customerWinrate.winRate;
+      }
+      // calculate outcome: 1 means win, 0 means lose (according to winRate)
+      // Use random float [0,1), if less than or equal to winRate then win else lose
+      const rand = Math.random();
+      const outcome = rand <= winRate ? 1 : 0;
+      // replace the last item in sequence with this outcome
+      sequence[sequence.length - 1] = outcome;
     }
-
 
     try {
       const trade = await prisma.trade.create({

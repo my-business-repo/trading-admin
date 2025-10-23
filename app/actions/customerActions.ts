@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { Account, Customer, TransactionDetails } from "@/type";
+import { Account, Customer, TransactionDetails, Winrate } from "@/type";
 import { Address } from "node:cluster";
 import { compare, hash } from "bcrypt";
 
@@ -151,3 +151,94 @@ export const changeCustomerPasswordByAdmin = async (
     }
 };
 
+
+
+export const getCustomerWinrate = async (customerId: number): Promise<Winrate | null> => {
+    let winrate = await prisma.winrate.findFirst({
+        where: {
+            customerId: customerId,
+        },
+        include: {
+            customer: true,
+        },
+    });
+
+    // If no winrate found, create a new one with value 0
+    if (!winrate) {
+        winrate = await prisma.winrate.create({
+            data: {
+                customerId: customerId,
+                winRate: 0,
+                createdAt: new Date(),
+                updatedAt: new Date()
+            },
+            include: {
+                customer: true,
+            },
+        });
+    }
+
+    // Convert Date objects to strings for createdAt/updatedAt if necessary
+    return {
+        ...winrate,
+        createdAt: winrate.createdAt instanceof Date ? winrate.createdAt.toISOString() : winrate.createdAt,
+        updatedAt: winrate.updatedAt instanceof Date ? winrate.updatedAt.toISOString() : winrate.updatedAt,
+    } as Winrate;
+};
+
+
+export const updateCustomerWinrate = async (
+    customerId: number,
+    newWinrate: number
+): Promise<{ success: boolean; message: string; winRate?: Winrate | null }> => {
+    try {
+        // Ensure winrate is a decimal value between 0 and 1
+        const winRateDecimal =
+            newWinrate > 1 ? newWinrate / 100 : newWinrate;
+
+        let winrate = await prisma.winrate.findFirst({
+            where: { customerId },
+        });
+
+        if (!winrate) {
+            winrate = await prisma.winrate.create({
+                data: {
+                    customerId,
+                    winRate: winRateDecimal,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                },
+            });
+        } else {
+            winrate = await prisma.winrate.update({
+                where: { id: winrate.id },
+                data: {
+                    winRate: winRateDecimal,
+                    updatedAt: new Date(),
+                },
+            });
+        }
+
+        // Return success with updated winrate info (converted dates if needed)
+        return {
+            success: true,
+            message: "Winrate updated successfully.",
+            winRate: {
+                ...winrate,
+                createdAt:
+                    winrate.createdAt instanceof Date
+                        ? winrate.createdAt.toISOString()
+                        : winrate.createdAt,
+                updatedAt:
+                    winrate.updatedAt instanceof Date
+                        ? winrate.updatedAt.toISOString()
+                        : winrate.updatedAt,
+            } as Winrate,
+        };
+    } catch (error: any) {
+        return {
+            success: false,
+            message: error?.message || "Failed to update winrate.",
+        };
+    }
+};

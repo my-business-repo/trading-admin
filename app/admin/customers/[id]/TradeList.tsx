@@ -28,6 +28,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
 const getTradeTypeColor = (tradeType: string) => {
     return tradeType === "LONG" ? "bg-green-100 text-green-600" : tradeType === "SHORT" ? "bg-red-100 text-red-600" : "";

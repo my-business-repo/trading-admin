@@ -83,11 +83,12 @@ export async function POST(req: NextRequest) {
         const exchangedAmount = amount * exchangeRate;
 
         // decrease from account balance and increase inreview balance
+        // decrease from account balance
         await prisma.account.update({
             where: { accountNo: fromAccount.accountNo },
             data: {
                 balance: fromAccount.balance.toNumber() - amount,
-                inreview_balance: fromAccount.inreview_balance.toNumber() + amount
+                // inreview_balance: fromAccount.inreview_balance.toNumber() + amount
             }
         });
 
@@ -96,10 +97,9 @@ export async function POST(req: NextRequest) {
             where: { accountNo: toAccount.accountNo },
             data: {
                 balance: toAccount.balance.toNumber() + exchangedAmount,
-                inreview_balance: toAccount.inreview_balance.toNumber() + exchangedAmount
+                // inreview_balance: toAccount.inreview_balance.toNumber() + exchangedAmount
             }
         });
-
 
         // Record the exchange in the database
         const exchangeRecord = await prisma.exchange.create({
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
                 amount,
                 exchangedAmount,
                 exchangeRate,
-                exchangeStatus: exchange_status.PENDING,
+                exchangeStatus: exchange_status.APPROVED,
                 exchangeType: exchange_type.BUY,
                 customerId: parseInt(userId),
                 updatedAt: new Date(),
