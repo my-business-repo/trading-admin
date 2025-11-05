@@ -4,6 +4,8 @@ import { authenticateRequest } from "@/lib/auth";
 import { generateTransactionId } from "@/lib/utils";
 import { depositSchema } from "@/zodValidate/validate";
 import { z } from "zod";
+import { addNewNoti } from "@/app/utils.ts/common";
+import { notification_type } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
   try {
@@ -133,6 +135,17 @@ export async function GET(req: NextRequest) {
       }
     })
     transactions.push(accountTransactions)
+  }
+
+  // After fetching the deposit transactions, add a notification for viewing deposit transactions
+  if (transactions.length > 0) {
+    // This uses the structure seen in other noti usage, but you may need to import addNewNoti, notification_type at the top level if not present.
+    // Notifies that the customer viewed their deposit transactions
+    await addNewNoti(
+      "Viewed Deposit Transactions",
+      `Customer ${customer.email || "[Unknown Email]"} viewed their deposit transactions.`,
+      notification_type.DEPOSIT_REQUEST
+    );
   }
 
   return NextResponse.json(transactions);

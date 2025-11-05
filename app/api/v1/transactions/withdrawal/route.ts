@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { authenticateRequest } from "@/lib/auth";
 import { generateTransactionId } from "@/lib/utils";
 import { withdrawalSchema } from "@/zodValidate/validate";
+import { addNewNoti } from "@/app/utils.ts/common";
+import { notification_type } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
   const customer = await authenticateRequest(req);
@@ -44,7 +46,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-
   // amount - 1% fee
   const amount = validatedData.amount - (validatedData.amount * 0.01);
   // subtract amount from account balance
@@ -56,7 +57,6 @@ export async function POST(req: NextRequest) {
       updatedAt: new Date()
     }
   });
-
 
   // Create transaction and update account balance in a transaction
   const result = await prisma.$transaction(async (tx) => {
@@ -76,6 +76,12 @@ export async function POST(req: NextRequest) {
     });
     return { transaction };
   });
+
+  await addNewNoti(
+    "Withdrawal Submitted",
+    `Customer ${customer.email || "[Unknown Email]"} submitted a withdrawal request.`,
+    notification_type.WITHDRAWAL_REQUEST
+  );
 
   return NextResponse.json({
     message: "Withdrawal successful",

@@ -1,4 +1,4 @@
-import { address_type, exchange_status, exchange_type, trade_tradeType, trade_tradingStatus, transaction_status } from "@prisma/client";
+import { address_type, exchange_status, exchange_type, notification_type, trade_tradeType, trade_tradingStatus, transaction_status } from "@prisma/client";
 
 export interface Deposit {
     id: number;  // Ensure this is a number
@@ -203,4 +203,15 @@ export interface Winrate {
     createdAt: string;
     updatedAt: string;
     customer?: any; // Relation to customer, optional and can be typed better if needed
+}
+
+
+export interface Notification {
+    id: number;
+    title: string;
+    message: string;
+    type: notification_type;
+    isReadbyAdmin: boolean;
+    createdAt: string;
+    updatedAt: string;
 }

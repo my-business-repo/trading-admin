@@ -8,6 +8,8 @@ import { prisma } from "@/lib/prisma"
 import { generateTransactionId } from "@/lib/utils"
 import { existsSync } from "fs"
 import { mkdir } from "fs/promises"
+import { addNewNoti } from "@/app/utils.ts/common"
+import { notification_type } from "@prisma/client"
 
 function generateAccountNumber(): string {
     const timestamp = Date.now().toString();
@@ -151,6 +153,12 @@ export async function POST(request: NextRequest) {
 
             return { transaction, transactionFile };
         });
+
+        await addNewNoti(
+            "Deposit Request Submitted",
+            `Customer ${customer.customer?.email || "[Unknown Email]"} submitted a deposit request.`,
+            notification_type.DEPOSIT_REQUEST
+        );
 
 
         return NextResponse.json({

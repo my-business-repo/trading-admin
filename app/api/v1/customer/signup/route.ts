@@ -1,6 +1,8 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hash } from "bcrypt";
+import { addNewNoti } from "@/app/utils.ts/common";
+import { notification_type } from "@prisma/client";
 
 // Validation function for email
 function isValidEmail(email: string): boolean {
@@ -134,6 +136,12 @@ export async function POST(req: Request) {
 
     // Remove password from response
     const { password: _, ...customerData } = updatedCustomer;
+
+    await addNewNoti(
+      "New Customer Registered",
+      `Customer ${customer.email} sent a message.`,
+      notification_type.NEW_CUSTOMER
+    );
 
     return NextResponse.json(
       {

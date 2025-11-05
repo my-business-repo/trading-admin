@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { authenticateCustomer } from "@/middleware/authMiddleware";
 import { authenticateRequest } from "@/lib/auth";
+import { addNewNoti } from "@/app/utils.ts/common";
+import { notification_type } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
     try {
@@ -45,6 +47,11 @@ export async function POST(req: NextRequest) {
                 createdAt: new Date()
             }
         });
+        await addNewNoti(
+            "New Customer Message",
+            `Customer ${customer.email} sent a message.`,
+            notification_type.NEW_MESSAGE
+        );
 
         return NextResponse.json({
             success: true,
