@@ -242,3 +242,84 @@ export const updateCustomerWinrate = async (
         };
     }
 };
+
+type DeleteCustomerResult = {
+    success: boolean;
+    message: string;
+};
+
+/**
+ * Delete a customer and all related data by customerId.
+ * This performs a cascading delete including: accounts, trades, transactions, transactionfiles, winrates, exchanges, messages, addresses.
+ * @param customerId number
+ */
+export async function deleteCustomerById(customerId: number): Promise<DeleteCustomerResult> {
+    try {
+        // Delete messages related to customer
+        await prisma.message.deleteMany({
+            where: { customerId }
+        });
+
+        // Delete winrate(s)
+        await prisma.winrate.deleteMany({
+            where: { customerId }
+        });
+
+        // Delete exchanges
+        await prisma.exchange.deleteMany({
+            where: { customerId }
+        });
+
+        // Delete addresses
+        await prisma.address.deleteMany({
+            where: { customerId }
+        });
+
+        // Delete trades
+        await prisma.trade.deleteMany({
+            where: { customerId }
+        });
+
+        // Find all accounts belonging to the customer
+        const accounts = await prisma.account.findMany({
+            where: { customerId },
+            select: { id: true }
+        });
+        const accountIds = accounts.map(a => a.id);
+
+        if (accountIds.length > 0) {
+            // Get all transactions for those accounts
+            const transactions = await prisma.transaction.findMany({
+                where: { accountId: { in: accountIds } },
+                select: { id: true }
+            });
+            const transactionIds = transactions.map(t => t.id);
+
+            // Delete all transactionfiles for those transactions
+            if (transactionIds.length > 0) {
+                await prisma.transactionfile.deleteMany({
+                    where: { transactionId: { in: transactionIds } }
+                });
+            }
+
+            // Delete all transactions for those accounts
+            await prisma.transaction.deleteMany({
+                where: { accountId: { in: accountIds } }
+            });
+
+            // Delete the accounts themselves
+            await prisma.account.deleteMany({
+                where: { id: { in: accountIds } }
+            });
+        }
+
+        // Finally, delete the customer
+        await prisma.customer.delete({
+            where: { id: customerId }
+        });
+
+        return { success: true, message: "Customer and all related data deleted successfully." };
+    } catch (error: any) {
+        return { success: false, message: error?.message || "Failed to delete customer." };
+    }
+}

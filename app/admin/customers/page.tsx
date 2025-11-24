@@ -19,20 +19,92 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, UserPlus, Trash2, ExternalLink, Edit, Loader2 } from "lucide-react"; // Added Edit icon
-import { getCustomers, getCustomerTransactions } from "@/app/actions/customerActions";
+import {
+  Search,
+  UserPlus,
+  Trash2,
+  ExternalLink,
+  Edit,
+  Loader2,
+} from "lucide-react";
+import {
+  getCustomers,
+  getCustomerTransactions,
+  deleteCustomerById,
+} from "@/app/actions/customerActions";
 import { Customer } from "@/type";
+import { Toaster, toast } from "sonner";
+import React from "react";
 
+function ConfirmDeleteModal({
+  open,
+  onConfirm,
+  onCancel,
+  name,
+  loading,
+}: {
+  open: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+  name: string | undefined;
+  loading: boolean;
+}) {
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center"
+      style={{ backdropFilter: "blur(1.5px)" }}
+    >
+      <div className="bg-white dark:bg-neutral-900 rounded-lg px-6 py-6 w-[90vw] max-w-sm border shadow-xl">
+        <div className="mb-2 text-lg font-semibold">
+          Delete Customer
+        </div>
+        <div className="mb-4 text-sm text-gray-700 dark:text-gray-300">
+          Are you sure you want to delete{" "}
+          <span className="font-bold">{name}</span> and all their data? This action cannot be undone.
+        </div>
+        <div className="flex justify-end gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onCancel}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            onClick={onConfirm}
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="flex items-center gap-1">
+                <Loader2 className="animate-spin h-4 w-4" /> Deleting...
+              </span>
+            ) : (
+              "Yes, Delete"
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function CustomerList() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
+  // State for delete modal
+  const [deleteTarget, setDeleteTarget] = useState<null | Customer>(null);
+  const [deleting, setDeleting] = useState(false);
+
   useEffect(() => {
     const fetchCustomers = async () => {
       const customers = await getCustomers();
-      console.log(customers);
       setCustomers(customers); // Set the fetched customers
       setIsLoading(false);
     };
@@ -41,23 +113,37 @@ export default function CustomerList() {
 
   const filteredCustomers = customers.filter((customer) =>
     Object.values(customer).some((value) =>
-      value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+      value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this customer?")) {
-      try {
-        // const response = await deleteCustomer(id);
-        // if (response.ok) {
-        //   setCustomers(customers.filter((customer) => customer.id !== id));
-        // } else {
-        //   console.error("Failed to delete customer");
-        // }
-      } catch (error) {
-        console.error("Error deleting customer:", error);
+  const handleAskDelete = (customer: Customer) => {
+    setDeleteTarget(customer);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const res = await deleteCustomerById(deleteTarget.id);
+      if (res.success) {
+        setCustomers((prev) =>
+          prev.filter((c) => c.id !== deleteTarget.id)
+        );
+        toast.success(`Customer "${deleteTarget.name}" deleted.`);
+      } else {
+        toast.error(`Failed to delete customer: ${res.message}`);
       }
+    } catch (error: any) {
+      toast.error(`Error deleting customer`);
     }
+    setDeleting(false);
+    setDeleteTarget(null);
+  };
+
+  const handleModalCancel = () => {
+    setDeleteTarget(null);
+    setDeleting(false);
   };
 
   const handleToggleActive = async (id: number, currentStatus: boolean) => {
@@ -67,6 +153,14 @@ export default function CustomerList() {
 
   return (
     <div className="space-y-6">
+      <Toaster position="top-center" richColors />
+      <ConfirmDeleteModal
+        open={!!deleteTarget}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleModalCancel}
+        name={deleteTarget?.name}
+        loading={deleting}
+      />
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -101,9 +195,9 @@ export default function CustomerList() {
                   <TableHead>Phone</TableHead>
                   <TableHead>Join Date</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>No. of Accounts</TableHead> {/* New column for number of accounts */}
-                  <TableHead>Last Login Time</TableHead> {/* New column for last login time */}
-                  <TableHead>Login ID</TableHead> {/* New column for login ID */}
+                  <TableHead>No. of Accounts</TableHead>
+                  <TableHead>Last Login Time</TableHead>
+                  <TableHead>Login ID</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -144,13 +238,15 @@ export default function CustomerList() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        {customer.account.length} {/* Display the number of accounts */}
+                        {customer.account.length}
                       </TableCell>
                       <TableCell>
-                        {customer.lastLoginTime ? new Date(customer.lastLoginTime).toLocaleString() : 'N/A'} {/* Display last login time */}
+                        {customer.lastLoginTime
+                          ? new Date(customer.lastLoginTime).toLocaleString()
+                          : "N/A"}
                       </TableCell>
                       <TableCell>
-                        {customer.loginId} {/* Display login ID */}
+                        {customer.loginId}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -179,7 +275,7 @@ export default function CustomerList() {
                             size="icon"
                             className="h-8 w-8 text-red-500 hover:text-red-600"
                             title="Delete customer"
-                            onClick={() => handleDelete(customer.id)}
+                            onClick={() => handleAskDelete(customer)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
