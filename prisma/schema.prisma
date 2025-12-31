@@ -80,13 +80,14 @@ model customer {
 }
 
 model message {
-  id            Int      @id @default(autoincrement())
+  id            Int          @id @default(autoincrement())
   content       String
-  from          String // loginId of sender (customer or admin)
-  to            String // loginId of receiver (customer or admin)
+  from          String       // loginId of sender (customer or admin)
+  to            String       // loginId of receiver (customer or admin)
   customerId    Int
-  isReadbyAdmin Boolean  @default(false)
-  createdAt     DateTime @default(now())
+  type          message_type @default(TEXT)
+  isReadbyAdmin Boolean      @default(false)
+  createdAt     DateTime     @default(now())
   updatedAt     DateTime
 
   customer customer @relation(fields: [customerId], references: [id], map: "Message_customerId_fkey")
@@ -282,4 +283,9 @@ enum notification_type {
   DEPOSIT_REQUEST
   DEPOSIT_SUCCESS
   ACCOUNT_VERIFIED
+}
+
+enum message_type {
+  TEXT
+  IMAGE
 }

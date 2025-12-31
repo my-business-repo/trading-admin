@@ -10,11 +10,11 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, SendHorizonal } from "lucide-react";
-import { getCustomers } from "@/app/actions/customerActions";
-import { Customer } from "@/type";
+import { Loader2, SendHorizonal, Image as ImageIcon } from "lucide-react";
+import { getCustomers, getCustomersWithUnreadMessagesCount } from "@/app/actions/customerActions";
+import { CustomerWithUnreadMessagesCount } from "@/type";
 import { getMessagesForCustomer, getCustomerMessageCount } from "@/app/actions/customerChatActions";
-import { sendMessageToCustomer as sendMessageToCustomerAction } from "@/app/actions/customerChatActions";
+import { sendMessageToCustomer as sendMessageToCustomerAction, markMessageAsRead, sendImageMessageToCustomer } from "@/app/actions/customerChatActions";
 
 const fetchConversation = async (customerId: number) => {
     try {
@@ -25,9 +25,10 @@ const fetchConversation = async (customerId: number) => {
     }
 };
 
-const sendMessageToCustomer = async (customerId: number, message: string) => {
+const sendMessageToCustomer = async (customerId: number, message: string, type: "TEXT" | "IMAGE" = "TEXT") => {
     try {
-        const res = await sendMessageToCustomerAction(customerId, message);
+        // The action now expects to handle different types, 'TEXT' or 'IMAGE'
+        const res = await sendMessageToCustomerAction(customerId, message, type);
         return { data: res };
     } catch (error) {
         return { error: true };
@@ -35,7 +36,7 @@ const sendMessageToCustomer = async (customerId: number, message: string) => {
 };
 
 export default function AdminChatPage() {
-    const [customers, setCustomers] = useState<Customer[]>([]);
+    const [customers, setCustomers] = useState<CustomerWithUnreadMessagesCount[]>([]);
     const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
     const [conversation, setConversation] = useState<any[]>([]);
     const [message, setMessage] = useState<string>("");
@@ -46,6 +47,10 @@ export default function AdminChatPage() {
 
     // for polling message count
     const [messageCount, setMessageCount] = useState<number | null>(null);
+
+    // for file/image
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const imageInputRef = useRef<HTMLInputElement | null>(null);
 
     // --- For auto scroll to bottom ---
     const conversationEndRef = useRef<HTMLDivElement | null>(null);
@@ -62,7 +67,8 @@ export default function AdminChatPage() {
             setLoadingCustomers(true);
             try {
                 const cs = await getCustomers();
-                setCustomers(cs);
+                const csWithUnreadMessagesCount = await getCustomersWithUnreadMessagesCount();
+                setCustomers(csWithUnreadMessagesCount);
             } catch (e) {
                 setCustomers([]);
             }
@@ -77,6 +83,10 @@ export default function AdminChatPage() {
             setLoadingChat(true);
             fetchConversation(selectedCustomerId).then((data) => {
                 setConversation(data.data || []);
+                // mark all messages as read by admin
+                data.data.forEach(async (message: any) => {
+                    await markMessageAsRead(message.id);
+                });
                 setLoadingChat(false);
             });
             // also get current message count
@@ -126,9 +136,48 @@ export default function AdminChatPage() {
     }, [selectedCustomerId, messageCount]); // re-run on change
 
     const handleSend = async () => {
+        console.log("send start");
+        if (selectedImage) {
+            // image send logic
+            setSending(true);
+            if (!selectedCustomerId || !selectedImage) {
+                setSending(false);
+                return;
+            }
+            console.log("start sending image");
+            try {
+                console.log("before send ....");
+
+                const formData = new FormData();
+                formData.append('customerId', selectedCustomerId.toString());
+                formData.append('file', selectedImage);
+
+                const res = await sendImageMessageToCustomer(formData);
+
+
+                console.log(res);
+                setMessage(""); // clear text
+                setSelectedImage(null);
+                // Refetch conversation or optimistically add to conversation
+                fetchConversation(selectedCustomerId).then((data) => {
+                    setConversation(data.data || []);
+                });
+                // Also refetch message count after send so polling keeps in sync
+                getCustomerMessageCount(selectedCustomerId)
+                    .then(count => setMessageCount(count))
+                    .catch(() => setMessageCount(null));
+            } catch (error) {
+                // Optionally: handle error (show toast, etc.)
+                setSelectedImage(null);
+            }
+            setSending(false);
+            return;
+        }
+
+
         if (!message.trim() || !selectedCustomerId) return;
         setSending(true);
-        const res = await sendMessageToCustomer(selectedCustomerId, message);
+        const res = await sendMessageToCustomer(selectedCustomerId, message, "TEXT");
         if (!res.error) {
             setMessage("");
             // Refetch conversation or optimistically add to conversation
@@ -141,6 +190,19 @@ export default function AdminChatPage() {
                 .catch(() => setMessageCount(null));
         }
         setSending(false);
+    };
+
+    // handle image file select & upload
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
+        console.log(e.target.files);
+        const file = e.target.files?.[0];
+        if (file) {
+            setSelectedImage(file);
+        }
+        // Reset input value to allow selecting the same file again
+        if (e.target) {
+            e.target.value = "";
+        }
     };
 
     return (
@@ -181,16 +243,24 @@ export default function AdminChatPage() {
                                 .map((customer) => (
                                     <li
                                         key={customer.id}
-                                        className={`cursor-pointer px-4 py-3 border-b hover:bg-muted ${selectedCustomerId === customer.id
+                                        className={`relative cursor-pointer px-4 py-3 border-b hover:bg-muted flex items-center justify-between ${selectedCustomerId === customer.id
                                             ? "bg-primary/10"
                                             : ""
                                             }`}
                                         onClick={() => setSelectedCustomerId(customer.id)}
                                     >
-                                        <div className="text-sm font-medium">{customer.name}</div>
-                                        <div className="text-xs text-muted-foreground">
-                                            {customer.email} {customer.loginId ? `| ${customer.loginId}` : ""}
+                                        <div>
+                                            <div className="text-sm font-medium">{customer.name}</div>
+                                            <div className="text-xs text-muted-foreground">
+                                                {customer.email} {customer.loginId ? `| ${customer.loginId}` : ""}
+                                            </div>
                                         </div>
+                                        {/* Show unread messages badge if present */}
+                                        {customer.unreadMessagesCount > 0 && (
+                                            <span className="ml-2 inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold min-w-[20px] h-5 px-2">
+                                                {customer.unreadMessagesCount}
+                                            </span>
+                                        )}
                                     </li>
                                 ))}
                         </ul>
@@ -234,7 +304,23 @@ export default function AdminChatPage() {
                                                 : "bg-muted"
                                                 }`}
                                         >
-                                            <div>{msg.content}</div>
+                                            {msg.type === "IMAGE" && msg.content ? (
+                                                <div className="mb-1">
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img
+                                                        src={msg.content}
+                                                        alt="sent image"
+                                                        className="rounded max-h-44 max-w-full object-contain border mb-1"
+                                                        style={{ background: "#fafbfc" }}
+                                                        loading="lazy"
+                                                    />
+                                                </div>
+                                            ) : null}
+                                            <div>
+                                                {msg.type === "IMAGE"
+                                                    ? null
+                                                    : msg.content}
+                                            </div>
                                             <div className="text-[10px] text-muted-foreground mt-1 text-right">
                                                 {msg.createdAt
                                                     ? new Date(msg.createdAt).toLocaleTimeString()
@@ -256,22 +342,85 @@ export default function AdminChatPage() {
 
                 {selectedCustomerId && (
                     <div className="border-t p-3 flex gap-2 items-center">
-                        <Input
-                            type="text"
-                            placeholder="Type your message..."
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter" && !sending) {
-                                    handleSend();
-                                }
-                            }}
-                            disabled={sending}
-                            className="flex-1"
+
+                        <div className="flex flex-col w-full gap-1 border-1">
+                            {selectedImage && (
+                                <div
+                                    className="flex items-center gap-1 border rounded px-2 py-1 bg-muted"
+                                    style={{ maxWidth: 180 }}
+                                >
+                                    <span className="truncate text-xs">{selectedImage.name}</span>
+                                    <button
+                                        type="button"
+                                        className="ml-1 text-muted-foreground hover:text-destructive"
+                                        style={{
+                                            border: "none",
+                                            background: "transparent",
+                                            padding: 0,
+                                            cursor: "pointer",
+                                            lineHeight: 1,
+                                            display: "flex",
+                                            alignItems: "center"
+                                        }}
+                                        tabIndex={-1}
+                                        aria-label="Clear selected image"
+                                        onClick={() => {
+                                            setSelectedImage(null);
+                                            // Reset file input to allow selecting the same file again
+                                            if (imageInputRef.current) {
+                                                imageInputRef.current.value = "";
+                                            }
+                                        }}
+                                    >
+                                        <svg height="16" width="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M4 4l8 8M12 4l-8 8" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            )}
+                            {
+                                !selectedImage && (
+                                    <Input
+                                        type="text"
+                                        placeholder="Type your message..."
+                                        value={message}
+                                        onChange={(e) => setMessage(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter" && !sending) {
+                                                handleSend();
+                                            }
+                                        }}
+                                        disabled={sending}
+                                        className="flex-1"
+                                    />
+                                )
+                            }
+
+                        </div>
+                        {/* IMAGE button */}
+                        <input
+                            type="file"
+                            accept="image/*"
+                            ref={imageInputRef}
+                            onChange={handleImageUpload}
+                            style={{ display: "none" }}
                         />
                         <Button
+                            variant="outline"
+                            size="icon"
+                            type="button"
+                            className="mr-1"
+                            style={{ minWidth: 36, minHeight: 36 }}
+                            disabled={sending}
+                            onClick={() => imageInputRef.current?.click()}
+                            aria-label="Send image"
+                            tabIndex={-1}
+                        >
+                            <ImageIcon className="h-5 w-5" />
+                        </Button>
+                        <Button
                             onClick={handleSend}
-                            disabled={sending || !message.trim()}
+                            disabled={selectedImage !== null ? false : sending || !message.trim()}
                             type="button"
                             size="icon"
                             aria-label="Send message"

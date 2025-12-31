@@ -38,6 +38,59 @@ export const getCustomers = async (): Promise<Customer[]> => {
 };
 
 
+// get customer with messages no read number by admin
+// Get all customers with the number of unread messages (isReadbyAdmin: false) for each customer
+export const getCustomersWithUnreadMessagesCount = async (): Promise<
+    Array<Customer & { unreadMessagesCount: number }>
+> => {
+    // Fetch all customers as before, including their ids
+    const customers = await prisma.customer.findMany({
+        include: {
+            account: true,
+            address: true,
+        },
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
+
+    // For all customer ids, query counts of unread messages grouped by customerId
+    const unreadCounts = await prisma.message.groupBy({
+        by: ["customerId"],
+        where: {
+            isReadbyAdmin: false,
+        },
+        _count: {
+            id: true,
+        },
+    });
+
+    // Map: customerId -> unread count
+    const unreadMap = Object.fromEntries(
+        unreadCounts.map((row) => [row.customerId, row._count.id])
+    );
+
+    // Construct customer list with unreadMessagesCount
+    return customers.map((customer) => ({
+        id: customer.id,
+        email: customer.email,
+        name: customer.name,
+        phone: customer.phone,
+        createdAt: customer.createdAt.toISOString(),
+        updatedAt: customer.updatedAt.toISOString(),
+        active: customer.active,
+        isActivated: customer.isActivated,
+        lastLoginTime: customer.lastLoginTime?.toISOString(),
+        socialSecurityNumber: customer.socialSecurityNumber,
+        loginId: customer.loginId,
+        account: customer.account as unknown as Account[],
+        address: customer.address as unknown as Address[],
+        unreadMessagesCount: unreadMap[customer.id] || 0,
+    })) as unknown as Array<Customer & { unreadMessagesCount: number }>;
+};
+
+
+
 // get customer by id
 export const getCustomerById = async (id: number): Promise<Customer> => {
     const customer = await prisma.customer.findUnique({
